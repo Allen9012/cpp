@@ -1,48 +1,86 @@
 #define _CRT_SECURE_NO_WARNINGS 1
 #include <iostream>
+#include <string>
 using namespace std;
 //
-//// 抽象类 -- 不能实例化出对象
-//// 1、可以更好的去表示现实世界中，没有实例对象对应的抽象类型  比如：植物、人、动物
-//// 2、体现接口继承，强制子类去重写虚函数(不重写，子类也是抽象类)  
-//// 要注意跟override区分，override检查子类虚函数是否完成重写。
-////class Car
-////{
-////public:
-////	// 纯虚函数
-////	virtual void Drive() = 0;
-////};
-////
-////class Benz :public Car
-////{
-////public:
-////	virtual void Drive()
-////	{
-////		cout << "Benz-舒适" << endl;
-////	}
-////};
-////
-////class BMW :public Car
-////{
-////public:
-////	virtual void Drive()
-////	{
-////		cout << "BMW-操控" << endl;
-////	}
-////};
-////
-////int main()
-////{
-////	//Car c;
-////	//Benz b;
-////	Car* pBenz = new Benz;
-////	pBenz->Drive();
-////
-////	Car* pBMW = new BMW;
-////	pBMW->Drive();
-////
-////	return 0;
-////}
+// //抽象类 -- 不能实例化出对象
+// //1、可以更好的去表示现实世界中，没有实例对象对应的抽象类型  比如：植物、人、动物
+// //2、体现接口继承，强制子类去重写虚函数(不重写，子类也是抽象类)  
+// //要注意跟override区分，override检查子类虚函数是否完成重写。
+//class Pokemon
+//{
+//public:
+//	// 纯虚函数
+//	virtual void Move1()=0;
+//	virtual void Move2() = 0;
+//	virtual void Move3() = 0;
+//	virtual void Move4() = 0;
+//protected:
+//	string _Type1;
+//	string _Type2;
+//	string _Abilities;
+//};
+////妙蛙花
+//class Venusaur :public Pokemon
+//{
+//public:
+//	virtual void Move1()
+//	{
+//		cout << "Solar Beam" << endl;
+//	}
+//	virtual void Move2() 
+//	{
+//		cout << "Poison Powder" << endl;
+//	}
+//	virtual void Move3() 
+//	{
+//		cout << "Sleep Powder" << endl;
+//	}
+//	virtual void Move4() 
+//	{
+//		cout << "Venoshock" << endl;
+//	}
+//protected:
+//	string _Abilities ="Overgrow";
+//	string _Type1 ="Grass";
+//	string _Type2="Poison";
+//};
+//
+////喷火龙
+//class Charizard :public Pokemon
+//{
+//public:
+//	virtual void Move1()
+//	{
+//		cout << "Flamethrower" << endl;
+//	}
+//	virtual void Move2() 
+//	{
+//		cout << "Flare Blitz" << endl;
+//	}
+//	virtual void Move3() 
+//	{
+//		cout << "Air Slash" << endl;
+//	}
+//	virtual void Move4() 
+//	{
+//		cout << "Dragon Dance" << endl;
+//	}
+//protected:
+//	string _Abilities = "Blaze";
+//	string _Type1 = "Fire";
+//	string _Type2 = "Flying";
+//};
+//
+//int main()
+//{
+//	//Pokemon p;   //error
+//	Venusaur venusaur;
+//	Charizard charizard;
+//	venusaur.Move1();
+//	charizard.Move1();
+//	return 0;
+//}
 //
 //// 这里常考一道笔试题：sizeof(Base)是多少？
 //class Base
@@ -73,7 +111,7 @@ using namespace std;
 //	cout << sizeof(Base) << endl;
 //	Base bs;
 //	
-//
+//	
 //	return 0;
 //}
 
@@ -172,13 +210,13 @@ using namespace std;
 //
 //	int* k = new int;
 //	printf("堆地址:%p\n", k);
-//	char* cp = "hello world";
+//	const char* cp = "hello world";
 //	printf("代码段地址:%p\n", cp);
 //
 //	return 0;
 //}
 
-// 单继承
+//// 单继承
 //class Base {
 //public:
 //	virtual void func1() { cout << "Base::func1" << endl; }
@@ -195,9 +233,8 @@ using namespace std;
 //private:
 //	int b;
 //};
-//
 //// 写一个程序打印一下虚表，确认虚表中调用的函数
-//typedef void(*VFunc)();
+//typedef void(*VFunc)();//定义一个函数指针
 //
 ////void PrintVFT(VFunc ptr[])
 //void PrintVFT(VFunc* ptr)   // 存函数指针的数组指针
@@ -210,18 +247,16 @@ using namespace std;
 //	}
 //	printf("\n");
 //}
-//
 //int main()
 //{
 //	Base b;
 //	PrintVFT((VFunc*)(*(int*)&b));
-//
 //	Derive d;
 //	PrintVFT((VFunc*)(*(int*)&d));
-//
-//
 //	return 0;
 //}
+//
+
 
 class Base1 {
 public:
@@ -248,8 +283,6 @@ private:
 };
 
 typedef void(*VFunc)();
-
-//void PrintVFT(VFunc ptr[])
 void PrintVFT(VFunc* ptr)   // 存函数指针的数组指针
 {
 	printf("虚表地址:%p\n", ptr);
@@ -268,13 +301,8 @@ int main()
 
 	//PrintVFT((VFunc*)(*(int*)&b1));
 	//PrintVFT((VFunc*)(*(int*)&b2));
-
 	Derive d;
-
 	PrintVFT((VFunc*)(*(int*)&d));
 	PrintVFT((VFunc*)(*(int*)((char*)&d + sizeof(Base1))));
-
-
-
 	return 0;
 }
