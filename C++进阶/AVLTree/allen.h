@@ -28,6 +28,102 @@ namespace allen
 	template<class K, class V>
 	class AVLTree
 	{
+	private:
+
+
+		void _Rotate_R(Node* parent)
+		{
+			Node* subL = parent->_left;
+			Node* subLR = subL->_right;
+			//1. 旋转
+			parent->_left = subLR;
+			//subLR有可能是空的
+			if (subLR)
+			{
+				subLR->_parent = parent;
+			}
+			subL->_right = parent;
+			Node* grandparent = parent->_parent;//先记录parent->_parent
+			parent->_parent = subL;
+			//2. 修改平衡因子
+			subL->_bf = parent->_bf = 0;
+			//3. 修改新父子关系
+			if (parent == _root)
+			{//独立子树
+				_root = subL;
+				_root->_parent = nullptr;
+			}
+			else
+			{//还有父亲，那要修改父亲，就要记录父亲的父亲
+				if (grandparent->_left == parent)
+				{
+					grandparent->_left = subL;
+					subL->_parent = grandparent;
+				}
+				else
+				{
+					grandparent->_right = subL;
+					subL->_parent = grandparent;
+				}
+			}
+		}
+
+
+		void _Rotate_L(Node* parent)
+		{
+			Node* subR = parent->_right;
+			Node* subRL = subR->_left;
+
+			//1. 旋转
+			parent->_right = subRL;
+			if (subRL)
+			{
+				subRL->_parent = parent;
+			}
+			subR->_left = parent;
+			Node* grandparent = parent->_parent;
+			parent->_parent = subR;
+
+			//2. 修改bf
+			subR->_bf = parent->_bf = 0;
+
+			//3. 修改新的父子关系
+			//空树
+			if (parent == _root)
+			{
+				_root = subR;
+				_root->_parent = nullptr;
+			}
+			else
+			{//还有父亲，那要修改父亲，就要记录父亲的父亲
+				if (grandparent->_left == parent)
+				{
+					grandparent->_left = subR;
+					subR->_parent = grandparent;
+				}                                                                                                       
+				else
+				{//grandparent->_left == parent
+					grandparent->_right = subR;
+					subR->_parent = grandparent;
+				}
+			}
+		}
+
+		void _Rotate_LR(Node* parent)
+		{
+			//先旋转左
+			_Rotate_L(parent->left);
+			//再旋转右
+			_Rotate_R(parent->_right);
+			//平衡因子调节
+
+		}
+		void _Rotate_RL(Node* parent)
+		{
+
+		}
+
+
 	public:
 		typedef AVLTreeNode<K, V> Node;
 		//构造
@@ -102,11 +198,36 @@ namespace allen
 					cur = parent;
 					parent = parent->_parent;
 				}
-				//旋转
+				//_bf == 2 ||_bf == -2  parent所在的子树不平衡，需要旋转处理一下
 				else if(parent->_bf == 2 || parent->_bf == -2)
 				{
-					//parent所在的子树不平衡，需要旋转处理一下
-
+					if (parent->_bf == -2)
+					{
+						//1. right rotation
+						if (cur->_bf == -1)
+						{
+							_Rotate_R(parent);
+						}
+						else //cur->_bf == 1
+						{
+							_Rotate_LR(parent)
+						}
+					}
+					else   //parent->_bf == 2
+					{
+						if (cur->_bf ==1 )
+						{
+							//2. left rotation 
+							_Rotate_L(parent);
+						} 
+						else //cur->_bf == -1
+						{
+							_Rotate_RL(parent);
+						}
+					}
+					
+			
+					//3. Left-Right Rotation
 				}
 				else//之前的出错了，暴力assert
 					assert(false);
