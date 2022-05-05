@@ -1,6 +1,6 @@
 #pragma once
 #include <iostream>
-#include "assert.h"
+#include <assert.h>
 using namespace std;
 
 template<class K, class V>
@@ -10,6 +10,7 @@ struct AVLTreeNode
 	AVLTreeNode<K, V>* _right;
 	AVLTreeNode<K, V>* _parent;
 
+	// 右子树的高度-左子树的高度
 	int _bf; // 平衡因子  balance factor
 
 	pair<K, V> _kv;
@@ -34,17 +35,36 @@ public:
 
 	// 拷贝构造和赋值需要实现深拷贝
 
-	~AVLTree()
+	void _Destory(Node* root)
 	{
-		// ...
+		if (root == nullptr)
+		{
+			return;
+		}
+
+		_Destory(root->_left);
+		_Destory(root->_right);
+		delete root;
 	}
 
-	bool Insert(const pair<K, V>& kv)
+	~AVLTree()
+	{
+		_Destory(_root);
+		_root = nullptr;
+	}
+
+	V& operator[](const K& key)
+	{
+		pair<Node*, bool> ret = Insert(make_pair(key, V()));
+		return ret.first->_kv.second;
+	}
+
+	pair<Node*, bool> Insert(const pair<K, V>& kv)
 	{
 		if (_root == nullptr)
 		{
 			_root = new Node(kv);
-			return true;
+			return make_pair(_root, true);
 		}
 
 		// 找到存储位置，把数据插入进去
@@ -63,11 +83,12 @@ public:
 			}
 			else
 			{
-				return false;
+				return make_pair(cur, true);
 			}
 		}
 
 		cur = new Node(kv);
+		Node* newnode = cur;
 		if (parent->_kv.first < kv.first)
 		{
 			parent->_right = cur;
@@ -142,18 +163,113 @@ public:
 			}
 		}
 
-		return true;
+		return make_pair(newnode, true);
 	}
+
 	void RotateLR(Node* parent)
 	{
+		Node* subL = parent->_left;
+		Node* subLR = subL->_right;
+		int bf = subLR->_bf;
+
 		RotateL(parent->_left);
 		RotateR(parent);
 
 		// ...平衡因子调节还需要具体分析
+		if (bf == -1)
+		{
+			subL->_bf = 0;
+			parent->_bf = 1;
+			subLR->_bf = 0;
+		}
+		else if (bf == 1)
+		{
+			parent->_bf = 0;
+			subL->_bf = -1;
+			subLR->_bf = 0;
+		}
+		else if (bf == 0)
+		{
+			parent->_bf = 0;
+			subL->_bf = 0;
+			subLR->_bf = 0;
+		}
+		else
+		{
+			assert(false);
+		}
 	}
 
-	void RotateRL(Node* parent);
-	void RotateL(Node* parent);
+	void RotateRL(Node* parent)
+	{
+		Node* subR = parent->_right;
+		Node* subRL = subR->_left;
+		int bf = subRL->_bf;
+
+		RotateR(parent->_right);
+		RotateL(parent);
+
+		// 平衡因子更新
+		if (bf == 1)
+		{
+			subR->_bf = 0;
+			parent->_bf = -1;
+			subRL->_bf = 0;
+		}
+		else if (bf == -1)
+		{
+			parent->_bf = 0;
+			subR->_bf = 1;
+			subRL->_bf = 0;
+		}
+		else if (bf == 0)
+		{
+			parent->_bf = 0;
+			subR->_bf = 0;
+			subRL->_bf = 0;
+		}
+		else
+		{
+			assert(false);
+		}
+	}
+
+	void RotateL(Node* parent)
+	{
+		Node* subR = parent->_right;
+		Node* subRL = subR->_left;
+
+		parent->_right = subRL;
+		if (subRL)
+		{
+			subRL->_parent = parent;
+		}
+
+		subR->_left = parent;
+		Node* parentParent = parent->_parent;
+		parent->_parent = subR;
+
+		if (parent == _root)
+		{
+			_root = subR;
+			_root->_parent = nullptr;
+		}
+		else
+		{
+			if (parentParent->_left == parent)
+			{
+				parentParent->_left = subR;
+			}
+			else
+			{
+				parentParent->_right = subR;
+			}
+			subR->_parent = parentParent;
+		}
+
+		parent->_bf = subR->_bf = 0;
+	}
+
 	void RotateR(Node* parent)
 	{
 		Node* subL = parent->_left;
@@ -187,14 +303,90 @@ public:
 
 	Node* Find(const K& key)
 	{
+		Node* cur = _root;
+		while (cur)
+		{
+			if (cur->_kv.first < key)
+			{
+				cur = cur->_right;
+			}
+			else if (cur->_kv.first > key)
+			{
+				cur = cur->_left;
+			}
+			else
+			{
+				return cur;
+			}
+		}
+
 		return nullptr;
 	}
 
+	// 1、工作中会用的（AVL树不会自己写，这里通过插入深入理解一下他的性质就够了）
+	// 2、校招会考的（基本不会问删除的细节）
+	// 有兴趣的可以下去实现一下。
 	bool Erase(const K& key)
 	{
 		return false;
 	}
 
+	void _InOrder(Node* root)
+	{
+		if (root == nullptr)
+		{
+			return;
+		}
+
+		_InOrder(root->_left);
+		cout << root->_kv.first << ":" << root->_kv.second << endl;
+		_InOrder(root->_right);
+	}
+
+	void InOrder()
+	{
+		_InOrder(_root);
+	}
+
+	int _Height(Node* root)
+	{
+		if (root == nullptr)
+		{
+			return 0;
+		}
+
+		int leftHeight = _Height(root->_left);
+		int rightHeight = _Height(root->_right);
+
+		return rightHeight > leftHeight ? rightHeight + 1 : leftHeight + 1;
+	}
+
+	bool _IsBalance(Node* root)
+	{
+		if (root == nullptr)
+		{
+			return true;
+		}
+
+		int leftHeight = _Height(root->_left);
+		int rightHeight = _Height(root->_right);
+
+		// 检查一下平衡因子是否正确
+		if (rightHeight - leftHeight != root->_bf)
+		{
+			cout << "平衡因子异常:" << root->_kv.first << endl;
+			return false;
+		}
+
+		return abs(rightHeight - leftHeight) < 2
+			&& _IsBalance(root->_left)
+			&& _IsBalance(root->_right);
+	}
+
+	bool IsAVLTree()
+	{
+		return _IsBalance(_root);
+	}
 private:
 	Node* _root;
 };
