@@ -9,45 +9,108 @@ enum Colour
 };
 
 //red-black
-template<class K, class V>
+template<class T>
 struct RBTreeNode
 {
-	RBTreeNode<K, V>* _left;
-	RBTreeNode<K, V>* _right;
-	RBTreeNode<K, V>* _parent;
-	pair<K, V> _kv;
+	RBTreeNode<T>* _left;
+	RBTreeNode<T>* _right;
+	RBTreeNode<T>* _parent;
+	T _data;
+
 	Colour _col;
 
-	RBTreeNode(const pair<K, V>& kv)
+	RBTreeNode(const T& x)
 		:_left(nullptr)
 		, _right(nullptr)
 		, _parent(nullptr)
-		, _kv(kv)
+		, _data(x)
 		, _col(RED)
 	{}
 };
 
-template<class K, class V>
+template<class T, class Ref, class Ptr>
 struct __TreeIterator
 {
-	typedef RBTreeNode<K, V> Node;
+	typedef RBTreeNode<T> Node;
+	typedef __TreeIterator<T, Ref, Ptr> Self;
+
 	Node* _node;
+
 	__TreeIterator(Node* node)
 		:_node(node)
 	{}
 
-	//operator*();
+	Ref operator*()
+	{
+		return _node->_data;
+	}
+
+	Ptr operator->()
+	{
+		return &_node->_data;
+	}
+
+	bool operator != (const Self& s) const
+	{
+		return _node != s._node;
+	}
 
 	// 难点
-	//operator++();
+	Self operator++()
+	{
+		if (_node->_right)
+		{
+			// 下一个访问就是右树中，中序的第一个节点
+			Node* left = _node->_right;
+			while (left->_left)
+			{
+				left = left->_left;
+			}
+
+			_node = left;
+		}
+		else
+		{
+			Node* cur = _node;
+			Node* parent = cur->_parent;
+			while (parent && cur == parent->_right)
+			{
+				cur = cur->_parent;
+				parent = parent->_parent;
+			}
+
+			_node = parent;
+		}
+
+		return *this;
+	}
+
 	//operator--();
 };
 
-template<class K, class V>
+template<class K, class T, class KeyOfT>
 class RBTree
 {
-	typedef RBTreeNode<K, V> Node;
+	typedef RBTreeNode<T> Node;
 public:
+	typedef __TreeIterator < T, T&, T* > iterator;
+
+	iterator begin()
+	{
+		Node* left = _root;
+		while (left && left->_left)
+		{
+			left = left->_left;
+		}
+
+		return iterator(left);
+	}
+
+	iterator end()
+	{
+		return iterator(nullptr);
+	}
+
 	RBTree()
 		:_root(nullptr)
 	{}
@@ -62,7 +125,7 @@ public:
 		}
 
 		Destory(root->_left);
-		Destory(root->right);
+		Destory(root->_right);
 		delete root;
 	}
 
@@ -74,14 +137,15 @@ public:
 
 	Node* Find(const K& key)
 	{
+		KeyOfT kot;
 		Node* cur = _root;
 		while (cur)
 		{
-			if (cur->_kv.first > key)
+			if (kot(cur->_data) > key)
 			{
 				cur = cur->_left;
 			}
-			else if (cur->_kv.first < key)
+			else if (kot(cur->_data) < key)
 			{
 				cur = cur->_right;
 			}
@@ -94,25 +158,27 @@ public:
 		return nullptr;
 	}
 
-	pair<Node*, bool> Insert(const pair<K, V>& kv)
+	pair<Node*, bool> Insert(const T& data)
 	{
 		if (_root == nullptr)
 		{
-			_root = new Node(kv);
+			_root = new Node(data);
 			_root->_col = BLACK;
 			return make_pair(_root, true);
 		}
+
+		KeyOfT kot;
 
 		Node* parent = nullptr;
 		Node* cur = _root;
 		while (cur)
 		{
-			if (cur->_kv.first < kv.first)
+			if (kot(cur->_data) < kot(data))
 			{
 				parent = cur;
 				cur = cur->_right;
 			}
-			else if (cur->_kv.first > kv.first)
+			else if (kot(cur->_data) > kot(data))
 			{
 				parent = cur;
 				cur = cur->_left;
@@ -123,9 +189,9 @@ public:
 			}
 		}
 
-		Node* newnode = new Node(kv);
+		Node* newnode = new Node(data);
 		newnode->_col = RED;
-		if (parent->_kv.first < kv.first)
+		if (kot(parent->_data) < kot(data))
 		{
 			parent->_right = newnode;
 			newnode->_parent = parent;
@@ -177,7 +243,34 @@ public:
 			}
 			else // parent == grandfather->_right
 			{
-				//...
+				Node* uncle = grandfather->_left;
+				// 情况1：
+				if (uncle && uncle->_col == RED)
+				{
+					uncle->_col = parent->_col = BLACK;
+					grandfather->_col = RED;
+
+					cur = grandfather;
+					parent = cur->_parent;
+				}
+				else // 情况2：+ 情况3：
+				{
+					if (cur == parent->_right)
+					{
+						RotateL(grandfather);
+						parent->_col = BLACK;
+						grandfather->_col = RED;
+					}
+					else // cur == parent->_left
+					{
+						RotateR(parent);
+						RotateL(grandfather);
+						cur->_col = BLACK;
+						grandfather->_col = RED;
+					}
+					// 插入结束
+					break;
+				}
 			}
 		}
 
@@ -248,6 +341,82 @@ public:
 		}
 	}
 
+	bool _CheckBalance(Node* root, int blackNum, int count)
+	{
+		if (root == nullptr)
+		{
+			if (count != blackNum)
+			{
+				cout << "黑色节点的数量不相等" << endl;
+				return false;
+			}
+
+			return true;
+		}
+
+		if (root->_col == RED && root->_parent->_col == RED)
+		{
+			cout << "存在连续的红色节点" << endl;
+			return false;
+		}
+
+		if (root->_col == BLACK)
+		{
+			count++;
+		}
+
+		return _CheckBalance(root->_left, blackNum, count)
+			&& _CheckBalance(root->_right, blackNum, count);
+	}
+
+	bool CheckBalance()
+	{
+		if (_root == nullptr)
+		{
+			return true;
+		}
+
+		if (_root->_col == RED)
+		{
+			cout << "根节点是红色的" << endl;
+			return false;
+		}
+
+		// 找最左路径做黑色节点数量参考值
+		int blackNum = 0;
+		Node* left = _root;
+		while (left)
+		{
+			if (left->_col == BLACK)
+			{
+				blackNum++;
+			}
+
+			left = left->_left;
+		}
+
+		int count = 0;
+		return _CheckBalance(_root, blackNum, count);
+	}
+
+	/*void _InOrder(Node* root)
+	{
+		if (root == nullptr)
+		{
+			return;
+		}
+
+		_InOrder(root->_left);
+		cout << root->_kv.first << ":"<<root->_kv.second<<endl;
+		_InOrder(root->_right);
+	}*/
+
+	/*void InOrder()
+	{
+		_InOrder(_root);
+		cout << endl;
+	}
+*/
 private:
 	Node* _root;
 };

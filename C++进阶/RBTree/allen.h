@@ -115,6 +115,33 @@ namespace allen
 			delete root;
 		}
 
+		bool _CheckBalance(Node*root,int black_num,int count)
+		{
+			if (root ==nullptr)
+			{
+				if (count != black_num)
+				{		//3.路径黑节点数相等
+					cout << "路径上黑色节点的数量不相等" << endl;
+					return false;
+				}
+				return true;
+			}
+
+			//2.遍历红节点，查父亲是不是红的，不要查孩子因为孩子可能没有
+			if (root->_col==RED && root->_parent->_col==RED)
+			{
+				cout << "存在连续的红色节点" << endl;
+				return false;
+			}
+
+			if (root->_col==BLACK)
+			{
+				count++;
+			}
+			return _CheckBalance(root->_left,black_num,count)
+						&& _CheckBalance(root->_right,black_num,count);
+		}
+
 	public:
 		//构造
 		RBTree()
@@ -134,12 +161,12 @@ namespace allen
 		//赋值重载
 
 		//插入
-		pair<Node*, bool> Insert(const pair<K, V>& kv)
+		pair<Node*, bool> Insert(const pair<K, V>& data)
 		{
 			//空树
 			if (_root==nullptr)
 			{
-				_root = new Node(kv);
+				_root = new Node(data);
 				_root->_col = BLACK;//根必须是黑的
 				return make_pair(_root, true);
 			} 
@@ -150,12 +177,12 @@ namespace allen
 			//1. 找适当的空位置
 			while (cur)
 			{
-				if (cur->_kv.first<kv.first)
+				if (cur->_kv.first<data.first)
 				{
 					parent = cur;
 					cur = cur->_right;
 				}
-				else if (cur->_kv.first<kv.first)
+				else if (cur->_kv.first<data.first)
 				{
 					parent = cur;
 					cur = cur->_left;
@@ -167,21 +194,22 @@ namespace allen
 			}
 
 			//2. cur走到空 可以链接
-			Node* newnode = new Node(kv);
+			Node* newnode = new Node(data);
 			newnode->_col = RED;
 
-			if (parent->_kv.first <kv.first)
+			if (parent->_kv.first <data.first)
 			{
-				parent->_right = cur;
-				cur->_parent = parent;
+				parent->_right = newnode;
+				newnode->_parent = parent;
 			}
 			else
 			{
-				parent->_left = cur;
-				cur->_parent = parent;
+				parent->_left = newnode;
+				newnode->_parent = parent;
 			}
 			cur = newnode;
 
+			//3.判断处理条件
 			//如果父亲存在，且颜色为红色就需要处理
 			while (parent && parent->_col == RED)
 			{	
@@ -226,7 +254,7 @@ namespace allen
 				//b. 首先父亲在祖父左边的情况
 				else//parent == grandfather->_right
 				{
-					Node* uncle = parent->_left;
+					Node* uncle = grandfather->_left;
 					//情况1：uncle 存在且为红 
 					if (uncle && uncle->_col==RED)
 					{
@@ -241,7 +269,7 @@ namespace allen
 					{
 						if (parent->_right==cur)
 						{
-							_Rotate_L(parent);
+							_Rotate_L(grandfather);
 							parent->_col = BLACK;
 							grandfather->_col = RED;
 						} 
@@ -257,7 +285,7 @@ namespace allen
 				}
 			}
 			//默认修改根节点为黑色
-			parent->_col = BLACK;
+			_root->_col = BLACK;
 			return make_pair(newnode, true);
 		}
 		
@@ -282,6 +310,33 @@ namespace allen
 			return nullptr;
 		}
 
+		bool  CheckBalance()
+		{
+			if (_root==nullptr)
+			{
+				return true;
+			}
+			//1.黑根
+			if (_root->_col==false)
+			{
+				cout << "root是红色"<<endl;
+				return false;
+			}
+			//2. 每条路径走到NIL节点，遇到黑++，找最左路径做黑色节点的参考值
+			int black_num = 0;
+			Node* left = _root;
+			while (left)
+			{
+				if (left->_col==BLACK)
+				{
+					black_num++;
+				}
+				left = left->_left;
+			}
+			int count = 0;//count计算该条路的值
+			//3. 用子函数来递归遍历
+			return _CheckBalance(_root,black_num,count);
+		}
 	private:
 		Node* _root;
 	};
