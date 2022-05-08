@@ -182,7 +182,7 @@ namespace allen
 					parent = cur;
 					cur = cur->_right;
 				}
-				else if (cur->_kv.first<data.first)
+				else if (cur->_kv.first>data.first)
 				{
 					parent = cur;
 					cur = cur->_left;
@@ -235,7 +235,7 @@ namespace allen
 						//情况2：单旋
 						if (cur==parent->_left)
 						{   //1. 右单旋
-							_Rotate_R(parent);
+							_Rotate_R(grandfather);
 							//2. 变色
 							grandfather->_col = RED;
 							parent->_col = BLACK;
@@ -337,6 +337,25 @@ namespace allen
 			//3. 用子函数来递归遍历
 			return _CheckBalance(_root,black_num,count);
 		}
+
+		void _InOrder(Node* root)
+		{
+			if (root == nullptr)
+			{
+				return;
+			}
+
+			_InOrder(root->_left);
+			cout << root->_kv.first << ":" << root->_kv.second << endl;
+			_InOrder(root->_right);
+		}
+
+		void InOrder()
+		{
+			_InOrder(_root);
+			cout << endl;
+		}
+
 	private:
 		Node* _root;
 	};
