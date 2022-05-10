@@ -1,5 +1,6 @@
 #pragma once
 #include <iostream>
+#include "Reverse_Iterator.h"
 using namespace std;
 namespace allen
 {
@@ -31,6 +32,9 @@ namespace allen
 	template<class T,class Ref,class Ptr>
 	struct __TreeIterator  
 	{
+		typedef Ref reference;
+		typedef Ptr pointer;
+
 		typedef RBTreeNode<T> Node;
 		typedef __TreeIterator<T,  Ref, Ptr> Self;
 
@@ -55,8 +59,13 @@ namespace allen
 			return _node != s._node;
 		}
 
+		bool operator == (const Self& s) const
+		{
+			return _node == s._node;
+		}
+
 		//难点
-		Self operator++()
+		Self& operator++()
 		{
 			if (_node->_right)
 			{
@@ -69,7 +78,7 @@ namespace allen
 				_node = left;
 			}
 			else
-			{//右树为空
+			{//右树为空，祖先中父亲右的哪一个
 				Node* cur = _node;
 				Node* parent = cur->_parent;
 				while (parent && cur==parent->_right)
@@ -82,11 +91,32 @@ namespace allen
 			return *this;
 		}
 
-		Self operator--()
+		Self& operator--()
 		{
+			if (_node->_left)
+			{
+				Node* right = _node->_left;
+				while (right->_right)
+				{
+					right = right->_right;
+				}
+				_node = right;
+			}
+			else
+			{
+				Node* cur = _node;
+				Node* parent = cur->_parent;
+				while (parent && cur==parent->_left)
+				{
+					cur = parent;
+					parent = parent->_parent;
+				}
+				_node = parent;
+			}
 			return *this;
 		}
 	};
+
 
 	template<class K, class T, class KeyOfT>
 	class RBTree
@@ -94,6 +124,25 @@ namespace allen
 	public:
 		typedef RBTreeNode<T> Node;
 		typedef __TreeIterator<T, T&, T*>  iterator;
+		typedef __TreeIterator<T, const T&, const T*>  const_iterator;
+		typedef Reverse_Iterator<iterator> reverse_iterator;
+
+		reverse_iterator rbegin()
+		{
+			Node* right = _root;
+			while (right && right->_right)
+			{
+				right = right->_right;
+			}
+			return reverse_iterator(iterator(right));
+		}
+
+		reverse_iterator rend()
+		{
+			return reverse_iterator(iterator(nullptr));
+		}
+
+
 		iterator begin()
 		{
 			Node* left = _root;
@@ -226,13 +275,13 @@ namespace allen
 
 	public:
 		//插入
-		pair<Node*, bool> Insert(const T& data)
+		pair<iterator, bool> Insert(const T& data)
 		{
 			if (_root == nullptr)
 			{
 				_root = new Node(data);
 				_root->_col = BLACK;
-				return make_pair(_root, true);
+				return make_pair(iterator(_root), true);
 			}
 
 			KeyOfT kot;
@@ -253,7 +302,7 @@ namespace allen
 				}
 				else
 				{
-					return make_pair(cur, false);
+					return make_pair(iterator(cur), false);
 				}
 			}
 
@@ -343,7 +392,7 @@ namespace allen
 			}
 
 			_root->_col = BLACK;
-			return make_pair(newnode, true);
+			return make_pair(iterator(newnode), true);
 		}
 		
 		Node* Find(const K& key)
@@ -369,33 +418,33 @@ namespace allen
 			return nullptr;
 		}
 
-		//bool  CheckBalance()
-		//{
-		//	if (_root==nullptr)
-		//	{
-		//		return true;
-		//	}
-		//	//1.黑根
-		//	if (_root->_col==false)
-		//	{
-		//		cout << "root是红色"<<endl;
-		//		return false;
-		//	}
-		//	//2. 每条路径走到NIL节点，遇到黑++，找最左路径做黑色节点的参考值
-		//	int black_num = 0;
-		//	Node* left = _root;
-		//	while (left)
-		//	{
-		//		if (left->_col==BLACK)
-		//		{
-		//			black_num++;
-		//		}
-		//		left = left->_left;
-		//	}
-		//	int count = 0;//count计算该条路的值
-		//	//3. 用子函数来递归遍历
-		//	return _CheckBalance(_root,black_num,count);
-		//}
+		bool  CheckBalance()
+		{
+			if (_root==nullptr)
+			{
+				return true;
+			}
+			//1.黑根
+			if (_root->_col==false)
+			{
+				cout << "root是红色"<<endl;
+				return false;
+			}
+			//2. 每条路径走到NIL节点，遇到黑++，找最左路径做黑色节点的参考值
+			int black_num = 0;
+			Node* left = _root;
+			while (left)
+			{
+				if (left->_col==BLACK)
+				{
+					black_num++;
+				}
+				left = left->_left;
+			}
+			int count = 0;//count计算该条路的值
+			//3. 用子函数来递归遍历
+			return _CheckBalance(_root,black_num,count);
+		}
 
 		//void _InOrder(Node* root)
 		//{

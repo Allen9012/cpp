@@ -15,6 +15,18 @@ namespace allen
 		};
 	public:
 		typedef  typename RBTree<K, pair<const K, V>, map_KeyOfT>::iterator  iterator;
+		typedef typename RBTree<K, pair<const K, V>, map_KeyOfT>::reverse_iterator reverse_iterator;
+
+		reverse_iterator rbegin()
+		{
+			return _t.rbegin();
+		}
+
+		reverse_iterator rend()
+		{
+			return _t.rend();
+		}
+
 		iterator begin()
 		{
 			return _t.begin();
@@ -25,10 +37,15 @@ namespace allen
 			return _t.end();
 		}
 
-		bool insert(const pair<const K, V>& kv)
+		pair<iterator, bool> insert(const pair<const K, V>& kv)
 		{
-			_t.Insert(kv);
-			return true;
+			return _t.Insert(kv);
+		}
+
+		V& operator[](const K& key)
+		{
+			pair<iterator, bool> ret = insert(make_pair(key, V()));
+			return ret.first->second;
 		}
 	private:
 		RBTree<K, pair<const K, V>, map_KeyOfT> _t;
