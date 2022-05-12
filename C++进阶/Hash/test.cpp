@@ -6,6 +6,7 @@
 #include <set>
 #include <time.h>
 using namespace std;
+#include "HashTable.h"
 
 	void test_unordered_set1()
 	{
@@ -138,7 +139,8 @@ int main()
 {
 	//std::test_unordered_set1();
 	//std::test_unordered_map1();
-	test_op();
+	//test_op();
+	allen::TestHashTable2();
 
 	return 0;
 }
