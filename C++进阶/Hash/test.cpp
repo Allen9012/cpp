@@ -140,7 +140,7 @@ int main()
 	//std::test_unordered_set1();
 	//std::test_unordered_map1();
 	//test_op();
-	allen::TestHashTable2();
+	Close_Hash::TestHashTable2();
 
 	return 0;
 }

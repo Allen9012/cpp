@@ -2,7 +2,7 @@
 #include <vector>
 using std::vector;
 using std::make_pair;
-namespace allen
+namespace Close_Hash
 {
 	enum State
 	{
@@ -159,7 +159,7 @@ namespace allen
 
 	private:
 		vector<HashData<K,V>> _table;
-		size_t _n;  //存储的有效数据个数
+		size_t _n=0;  //存储的有效数据个数
 	};
 
 
@@ -219,4 +219,89 @@ namespace allen
 	}
 
 
+}
+
+
+namespace Open_Hash
+{
+	template<class K,class V>
+	struct HashNode
+	{
+		HashNode<K, V>* _next;
+		pair<K, V> _kv;
+
+		HashNode(const pair<K,V>& kv)
+			:_next(nullptr)
+			,_kv(kv)
+		{}
+	};
+	
+	template<class K, class V>
+	class HashTable 
+	{
+		typedef HashNode<K, V> Node;
+	public:
+		bool Insert(const pair<K, V>& kv)
+		{
+			if (Find(kv.first))
+			{
+				return false;
+			}
+			size_t index = kv.first % _table.size();
+			Node* newnode = new Node(kv);
+			//头插,而且也不用排空
+			newnode->_next = _table[index];
+			_table[index] = newnode;
+			return true;
+		}
+
+		Node* Find(const K& key)
+		{
+			size_t index = kv.first % _table.size();
+			Node* cur = _table[index];
+			while (cur)
+			{
+				if (cur->_kv.first == key)
+				{
+					return cur;
+				}
+				else
+				{
+					cur = cur->_next;
+				}
+			}
+			return nullptr;
+		}
+
+		bool Erase(const K& key)
+		{
+			size_t index = kv.first % _table.size();
+			Node* cur = _table[index];
+			Node* prev=nullptr;
+			while (cur)
+			{
+				if (cur->_kv.first==key)
+				{
+					if (_table[index]==cur)
+					{
+						_table[index] = cur->_next;
+					}
+					else
+					{
+						prev->_next = cur->_next;
+					}
+					delete cur;
+					cur = nullptr;
+					return true;
+				}
+				prev = cur;
+				cur = cur->_next;
+			}
+			return false;
+		}
+
+	private:
+		vector<Node*> _table;//存的是指针
+		size_t _n = 0;  //有效数据个数
+	};
 }
