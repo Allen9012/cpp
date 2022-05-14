@@ -74,7 +74,7 @@ using namespace std;
 		int N = 100000;
 		vector<int> v;
 		v.reserve(N);
-		srand(time(0));
+		srand(size_t(time(0)));
 		for (int i = 0; i < N; ++i)
 		{
 			v.push_back(rand());
@@ -140,7 +140,7 @@ int main()
 	//std::test_unordered_set1();
 	//std::test_unordered_map1();
 	//test_op();
-	Close_Hash::TestHashTable2();
-
+	//Close_Hash::TestHashTable2();
+	Open_Hash::TestHashTable2();
 	return 0;
 }

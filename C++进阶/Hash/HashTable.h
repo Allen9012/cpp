@@ -51,7 +51,7 @@ namespace Close_Hash
 	};
 
 
-	template <class K, class V,class HashFunc>
+	template <class K, class V,class HashFunc=Hash<K>>
 	class HashTable
 	{
 	public:
@@ -224,6 +224,27 @@ namespace Close_Hash
 
 namespace Open_Hash
 {
+	const int PRIMECOUNT = 28;
+	const size_t primeList[PRIMECOUNT] =
+	{
+	53ul, 97ul, 193ul, 389ul, 769ul,
+	1543ul, 3079ul, 6151ul, 12289ul, 24593ul,
+	49157ul, 98317ul, 196613ul, 393241ul, 786433ul,
+	1572869ul, 3145739ul, 6291469ul, 12582917ul, 25165843ul,
+	50331653ul, 100663319ul, 201326611ul, 402653189ul, 805306457ul,
+	1610612741ul, 3221225473ul, 4294967291ul
+	};
+	size_t GetNextPrime(size_t prime)
+	{
+		size_t i = 0;
+		for (; i < PRIMECOUNT; ++i)
+		{
+			if (primeList[i] > primeList[i])
+				return primeList[i];
+		}
+		return primeList[i];
+	}
+
 	template<class K,class V>
 	struct HashNode
 	{
@@ -236,28 +257,90 @@ namespace Open_Hash
 		{}
 	};
 	
-	template<class K, class V>
+	template<class K>
+	struct Hash
+	{
+		size_t operator()(const K& key)
+		{
+			return key;
+		}
+	};
+	// 特化
+	template<>
+	struct Hash<string>
+	{
+		size_t operator()(const string& s)
+		{
+			// BKDR Hash
+			size_t value = 0;
+			for (auto ch : s)
+			{
+				value += ch;
+				value *= 131;
+			}
+
+			return value;
+		}
+	};
+
+	template<class K, class V,class HashFunc=Hash<K>>
 	class HashTable 
 	{
 		typedef HashNode<K, V> Node;
 	public:
 		bool Insert(const pair<K, V>& kv)
 		{
+			//有相同数据直接false
 			if (Find(kv.first))
-			{
 				return false;
+			HashFunc hf;
+			//负载因子，到一的时候，进行增容
+			if (_n == _table.size())
+			{
+				vector<Node*> newtable;
+				/*size_t new_size = _table.size() == 0 ? 10 : _table.size() * 2;
+				newtable.resize(new_size);*/
+				newtable.resize(GetNextPrime(_table.size()));
+				//旧表节点重新算位置搞到新表
+				for (size_t i=0;i<_table.size();++i)
+				{
+					if (_table[i])
+					{
+						Node* cur = _table[i];
+						while (cur)
+						{
+							Node* next = cur->_next;
+							size_t index = hf(cur->_kv.first) % newtable.size();
+							//头插
+							cur->_next = newtable[index];
+							newtable[index] = cur;
+							//原表迭代
+							cur = next;
+						}
+						_table[i] = nullptr;
+					}
+				}
+				_table.swap(newtable);
 			}
-			size_t index = kv.first % _table.size();
+
+			//没有到1，直接链接
+			size_t index = hf(kv.first) % _table.size();
 			Node* newnode = new Node(kv);
 			//头插,而且也不用排空
 			newnode->_next = _table[index];
 			_table[index] = newnode;
+			++_n;
 			return true;
 		}
 
 		Node* Find(const K& key)
 		{
-			size_t index = kv.first % _table.size();
+			if (_table.size() == 0)
+			{
+				return nullptr;
+			}
+			HashFunc hf;
+			size_t index = hf(key) % _table.size();
 			Node* cur = _table[index];
 			while (cur)
 			{
@@ -275,7 +358,8 @@ namespace Open_Hash
 
 		bool Erase(const K& key)
 		{
-			size_t index = kv.first % _table.size();
+			HashFunc hf;
+			size_t index =hf(key) % _table.size();
 			Node* cur = _table[index];
 			Node* prev=nullptr;
 			while (cur)
@@ -304,4 +388,60 @@ namespace Open_Hash
 		vector<Node*> _table;//存的是指针
 		size_t _n = 0;  //有效数据个数
 	};
+
+
+	void TestHashTable()
+	{
+		vector<int> v = { 1, 5, 10, 100000, 100, 18, 15, 7, 40 ,44};
+		HashTable<int, int> ht;
+		for (auto e : v)
+		{
+			ht.Insert(make_pair(e, e));
+		}
+		ht.Insert(make_pair(25, 25));
+	}
+
+	void TestHashTable2()
+	{
+		string a[] = { "皮卡丘", "喷火龙", "皮卡丘", "喷火龙", "皮卡丘", "路卡利欧", "皮卡丘" };
+		HashTable<string, int, Hash<string>> ht;
+		for (auto str : a)
+		{
+			auto ret = ht.Find(str);
+			if (ret)
+			{
+				ret->_kv.second++;
+			}
+			else
+			{
+				ht.Insert(make_pair(str, 1));
+			}
+		}
+	}
+
+	struct pokemon
+	{
+		// ...
+	};
+
+	struct PokemonHashFunc
+	{
+		size_t operator()(const pokemon& kv)
+		{
+			// 如果是结构体
+			// 1、比如说结构体中有一个整形，基本是唯一值 - pokemon序号
+			// 2、比如说结构体中有一个字符串，基本是唯一值 - pokemon name
+			// 3、如果没有一项是唯一值，可以考虑多项组合
+			size_t value = 0;
+			// ...
+			return value;
+		}
+	};
+
+	void TestHashTable3()
+	{
+		string a[] = { "苹果", "西瓜", "苹果", "西瓜", "苹果", "橘子", "苹果" };
+		// 任意类型都可以做key，跟上一个把这个类型对象转换成整形的仿函数即可
+		HashTable<pokemon, int, PokemonHashFunc> ht;
+	}
 }
