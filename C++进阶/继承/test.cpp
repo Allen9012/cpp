@@ -398,3 +398,16 @@ int main()
 //
 //	return 0;
 //}
+
+class Pokemon
+{
+};
+
+class pikachu :public Pokemon
+{
+public:
+	string move1;
+	string move2;
+	string move3;
+	string move4;
+};
